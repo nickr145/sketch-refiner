@@ -4,19 +4,16 @@ import { v4 as uuid } from "uuid";
 
 export function initCanvas(
   el: HTMLCanvasElement,
-  strokes: Stroke[]
+  strokes: Stroke[],
+  onStrokeAdded?: () => void
 ): fabric.Canvas {
 
   const canvas = new fabric.Canvas(el);
-
-  // ✅ Enable drawing mode
   canvas.isDrawingMode = true;
 
-  // ✅ EXPLICITLY create the brush (REQUIRED in Fabric v6)
   const brush = new fabric.PencilBrush(canvas);
   brush.width = 4;
   brush.color = "#000";
-
   canvas.freeDrawingBrush = brush;
 
   canvas.on("path:created", (e: any) => {
@@ -33,6 +30,8 @@ export function initCanvas(
     width: brush.width,
     color: brush.color,
   });
+
+  onStrokeAdded?.();
 
   console.log("Stroke added. Total:", strokes.length);
 });
