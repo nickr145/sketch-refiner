@@ -7,6 +7,10 @@ import { analyzeDrawing } from "./analysis/drawingAnalysis";
 import { countIntersections } from "./analysis/intersections";
 import { verticalSymmetryScore } from "./analysis/symmetry";
 import { groupStrokes } from "./analysis/grouping";
+import { deriveConstraints } from "./rag/constraints";
+import { retrieveRules } from "./rag/retriever";
+import { buildPrompt } from "./rag/prompt";
+
 
 const canvasEl = document.getElementById("canvas") as HTMLCanvasElement;
 const clearBtn = document.getElementById("clear") as HTMLButtonElement;
@@ -26,11 +30,30 @@ function recomputeMetrics() {
   const symmetry = verticalSymmetryScore(strokes, canvas.width);
   const groups = groupStrokes(strokes);
 
+  // Phase 5 — Constraints
+  const constraints = deriveConstraints({
+    ...drawingMetrics,
+    intersections,
+    symmetryScore: symmetry,
+  });
+
+  // Phase 5 — RAG retrieval
+  const rules = retrieveRules(constraints);
+
+  // Phase 5 — Prompt assembly
+  const prompt = buildPrompt(constraints, rules);
+
+  // Debug output (temporary)
   console.log("Drawing metrics:", drawingMetrics);
   console.log("Intersections:", intersections);
   console.log("Vertical symmetry:", symmetry);
   console.log("Groups:", groups.map(g => g.length));
+
+  console.log("Constraints:", constraints);
+  console.log("Retrieved rules:", rules.map(r => r.id));
+  console.log("Prompt:\n", prompt);
 }
+
 
 let strokes: Stroke[] = [];
 let uploadRaster: string | null = null;
