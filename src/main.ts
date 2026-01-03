@@ -4,21 +4,44 @@ import { type Stroke } from "./canvas/Stroke";
 import { readFileAsBase64 } from "./upload/upload";
 import { buildPayload } from "./api/client";
 import { analyzeDrawing } from "./analysis/drawingAnalysis";
+import { countIntersections } from "./analysis/intersections";
+import { verticalSymmetryScore } from "./analysis/symmetry";
+import { groupStrokes } from "./analysis/grouping";
 
 const canvasEl = document.getElementById("canvas") as HTMLCanvasElement;
 const clearBtn = document.getElementById("clear") as HTMLButtonElement;
 const exportBtn = document.getElementById("export") as HTMLButtonElement;
 const uploadInput = document.getElementById("upload") as HTMLInputElement;
 
+function recomputeMetrics() {
+  // Phase 3
+  const drawingMetrics = analyzeDrawing(
+    strokes,
+    canvas.width,
+    canvas.height
+  );
+
+  // Phase 4
+  const intersections = countIntersections(strokes);
+  const symmetry = verticalSymmetryScore(strokes, canvas.width);
+  const groups = groupStrokes(strokes);
+
+  console.log("Drawing metrics:", drawingMetrics);
+  console.log("Intersections:", intersections);
+  console.log("Vertical symmetry:", symmetry);
+  console.log("Groups:", groups.map(g => g.length));
+}
+
 let strokes: Stroke[] = [];
 let uploadRaster: string | null = null;
 
-const canvas = initCanvas(canvasEl, strokes);
+const canvas = initCanvas(canvasEl, strokes, recomputeMetrics);
 
 clearBtn.onclick = () => {
   canvas.clear();
   strokes.length = 0;
   uploadRaster = null;
+  recomputeMetrics();
 };
 
 uploadInput.onchange = async () => {
@@ -26,6 +49,7 @@ uploadInput.onchange = async () => {
   uploadRaster = await readFileAsBase64(uploadInput.files[0]);
   canvas.clear();
   strokes.length = 0;
+  recomputeMetrics();
 };
 
 exportBtn.onclick = () => {
@@ -41,8 +65,6 @@ exportBtn.onclick = () => {
   );
 
   console.log("Payload:", payload);
-  const metrics = analyzeDrawing(strokes, canvas.width, canvas.height);
-  console.log("Metrics:", metrics);
 };
 
 // DEBUG — leave this in temporarily
