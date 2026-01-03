@@ -3,6 +3,7 @@ import { exportPNG } from "./canvas/export";
 import { type Stroke } from "./canvas/Stroke";
 import { readFileAsBase64 } from "./upload/upload";
 import { buildPayload } from "./api/client";
+import { analyzeDrawing } from "./analysis/drawingAnalysis";
 
 const canvasEl = document.getElementById("canvas") as HTMLCanvasElement;
 const clearBtn = document.getElementById("clear") as HTMLButtonElement;
@@ -40,6 +41,8 @@ exportBtn.onclick = () => {
   );
 
   console.log("Payload:", payload);
+  const metrics = analyzeDrawing(strokes, canvas.width, canvas.height);
+  console.log("Metrics:", metrics);
 };
 
 // DEBUG — leave this in temporarily
