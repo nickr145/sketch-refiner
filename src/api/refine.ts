@@ -3,7 +3,6 @@ export async function refineImage(
   prompt: string,
   constraints: object
 ): Promise<string> {
-
   const res = await fetch("http://localhost:8000/refine", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -13,6 +12,11 @@ export async function refineImage(
       constraints,
     }),
   });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Refinement failed: ${text}`);
+  }
 
   const data = await res.json();
   return data.image_base64;
