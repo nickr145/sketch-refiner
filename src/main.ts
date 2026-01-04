@@ -10,7 +10,7 @@ import { groupStrokes } from "./analysis/grouping";
 import { deriveConstraints } from "./rag/constraints";
 import { retrieveRules } from "./rag/retriever";
 import { buildPrompt } from "./rag/prompt";
-
+import { refineImage } from "./api/refine";
 
 const canvasEl = document.getElementById("canvas") as HTMLCanvasElement;
 const clearBtn = document.getElementById("clear") as HTMLButtonElement;
@@ -19,11 +19,7 @@ const uploadInput = document.getElementById("upload") as HTMLInputElement;
 
 function recomputeMetrics() {
   // Phase 3
-  const drawingMetrics = analyzeDrawing(
-    strokes,
-    canvas.width,
-    canvas.height
-  );
+  const drawingMetrics = analyzeDrawing(strokes, canvas.width, canvas.height);
 
   // Phase 4
   const intersections = countIntersections(strokes);
@@ -31,32 +27,39 @@ function recomputeMetrics() {
   const groups = groupStrokes(strokes);
 
   // Phase 5 — Constraints
-  const constraints = deriveConstraints({
+  currentConstraints = deriveConstraints({
     ...drawingMetrics,
     intersections,
     symmetryScore: symmetry,
   });
 
   // Phase 5 — RAG retrieval
-  const rules = retrieveRules(constraints);
+  const rules = retrieveRules(currentConstraints);
 
   // Phase 5 — Prompt assembly
-  const prompt = buildPrompt(constraints, rules);
+  currentPrompt = buildPrompt(currentConstraints, rules);
 
   // Debug output (temporary)
   console.log("Drawing metrics:", drawingMetrics);
   console.log("Intersections:", intersections);
   console.log("Vertical symmetry:", symmetry);
-  console.log("Groups:", groups.map(g => g.length));
+  console.log(
+    "Groups:",
+    groups.map((g) => g.length)
+  );
 
-  console.log("Constraints:", constraints);
-  console.log("Retrieved rules:", rules.map(r => r.id));
-  console.log("Prompt:\n", prompt);
+  console.log("Constraints:", currentConstraints);
+  console.log(
+    "Retrieved rules:",
+    rules.map((r) => r.id)
+  );
+  console.log("Prompt:\n", currentPrompt);
 }
-
 
 let strokes: Stroke[] = [];
 let uploadRaster: string | null = null;
+let currentConstraints: any = null;
+let currentPrompt: string = "";
 
 const canvas = initCanvas(canvasEl, strokes, recomputeMetrics);
 
@@ -75,19 +78,24 @@ uploadInput.onchange = async () => {
   recomputeMetrics();
 };
 
-exportBtn.onclick = () => {
+exportBtn.onclick = async () => {
   const raster = uploadRaster ?? exportPNG(canvas);
-  const source = uploadRaster ? "upload" : "draw";
 
-  const payload = buildPayload(
-    source,
-    raster,
-    source === "draw" ? strokes : null,
-    canvasEl.width,
-    canvasEl.height
-  );
+  if (!currentPrompt || !currentConstraints) {
+    console.warn("No prompt or constraints available");
+    return;
+  }
 
-  console.log("Payload:", payload);
+  const refined = await refineImage(raster, currentPrompt, currentConstraints);
+
+  console.log("Refined image:", refined);
+
+  // Optional: display result
+  const img = new Image();
+  img.src = refined;
+  img.style.maxWidth = "400px";
+  img.style.border = "1px solid #ccc";
+  document.body.appendChild(img);
 };
 
 // DEBUG — leave this in temporarily
