@@ -60,6 +60,7 @@ let strokes: Stroke[] = [];
 let uploadRaster: string | null = null;
 let currentConstraints: any = null;
 let currentPrompt: string = "";
+let outputImg: HTMLImageElement | null = null;
 
 const canvas = initCanvas(canvasEl, strokes, recomputeMetrics);
 
@@ -91,11 +92,16 @@ exportBtn.onclick = async () => {
   console.log("Refined image:", refined);
 
   // Optional: display result
-  const img = new Image();
-  img.src = refined;
-  img.style.maxWidth = "400px";
-  img.style.border = "1px solid #ccc";
-  document.body.appendChild(img);
+  if (!outputImg) {
+    outputImg = new Image();
+    outputImg.style.maxWidth = "400px";
+    outputImg.style.border = "1px solid #ccc";
+    outputImg.style.display = "block";
+    outputImg.style.marginTop = "16px";
+    document.body.appendChild(outputImg);
+  }
+
+  outputImg.src = refined;
 };
 
 // DEBUG — leave this in temporarily
