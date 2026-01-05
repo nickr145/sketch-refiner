@@ -101,7 +101,7 @@ exportBtn.onclick = async () => {
     document.body.appendChild(outputImg);
   }
 
-  outputImg.src = refined;
+  outputImg.src = `data:image/png;base64,${refined}`;
 };
 
 // DEBUG — leave this in temporarily
